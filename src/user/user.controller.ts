@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Patch,
@@ -38,6 +39,7 @@ export class UserController {
     @Body() { name, email, password, birthAt }: UpdatePutUserDTO,
     @Param('id', ParseIntPipe) id: number,
   ) {
+    await this.exists(id);
     return this.userService.update(id, { name, email, password, birthAt });
   }
 
@@ -46,13 +48,19 @@ export class UserController {
     @Body() data: UpdatePatchUserDTO,
     @Param('id', ParseIntPipe) id: number,
   ) {
+    await this.exists(id);
     return this.userService.updatePartial(id, data);
   }
 
   @Delete(':id')
   async delete(@Param('id', ParseIntPipe) id: number) {
-    return {
-      id,
-    };
+    await this.exists(id);
+    return this.userService.delete(id);
+  }
+
+  async exists(id: number) {
+    if (!(await this.show(id))) {
+      throw new NotFoundException('User not found');
+    }
   }
 }
